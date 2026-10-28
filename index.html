@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Calendar Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Default / Fallback Variables */
+        :root {
+            --page-bg: #09090b;
+            --grid-bg: #18181b;
+            --header-bg: #3b0764;
+            --border-color: #ea580c;
+            --muted-text: #f97316;
+            --dim-bg: rgba(59, 7, 100, 0.35);
+            --event-bg-1: #c2410c;
+            --event-bg-2: #6b21a8;
+        }
+
+        body { 
+            background-color: var(--page-bg) !important; 
+            color: #f8fafc; 
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .grid-container {
+            background-color: var(--grid-bg);
+            border-color: var(--border-color);
+        }
+
+        .header-row {
+            background-color: var(--header-bg);
+            border-color: var(--border-color);
+            color: var(--muted-text);
+        }
+
+        .grid-cols-7 { 
+            display: grid; 
+            grid-template-columns: repeat(7, minmax(0, 1fr)); 
+        }
+
+        .day-cell { 
+            min-height: 120px; 
+            border: 1px solid var(--border-color); 
+            padding: 0.5rem; 
+        }
+
+        .day-dimmed {
+            background-color: var(--dim-bg);
+        }
+
+        .text-muted {
+            color: var(--muted-text);
+        }
+
+        .event-item { 
+            font-size: 0.75rem; 
+            line-height: 1rem;
+            padding: 3px 6px; 
+            margin-bottom: 3px; 
+            border-radius: 4px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4">
+    
+    <!-- Header: Clock on Left, Rotating Photo Banner Spanning Right -->
+    <div class="flex items-center justify-between mb-4 gap-6">
+        <div class="shrink-0">
+            <h1 id="clock" class="text-6xl font-bold leading-none"></h1>
+            <h2 id="date" class="text-2xl text-muted mt-2"></h2>
+        </div>
+        
+        <!-- Banner Container with Cross-fading Images -->
+        <div id="banner-container" class="flex-grow h-24 overflow-hidden rounded-lg shadow-lg relative hidden" style="border: 1px solid var(--border-color);">
+            <img id="banner-img-1" src="" alt="Header Photo 1" class="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 opacity-0">
+            <img id="banner-img-2" src="" alt="Header Photo 2" class="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 opacity-0">
+        </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="flex-grow flex flex-col grid-container rounded-lg overflow-hidden border shadow-xl">
+        <div class="grid-cols-7 header-row border-b text-center py-2 text-xs font-bold uppercase tracking-wider">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div id="calendar-grid" class="grid-cols-7 flex-grow"></div>
+    </div>
+
+    <script>
+        // Apply Full 12-Month Seasonal Themes
+        function applySeasonalTheme() {
+            const root = document.documentElement;
+            const month = new Date().getMonth(); // 0 = Jan ... 11 = Dec
+
+            const themes = {
+                0: { // January - Winter Navy & Frost
+                    '--page-bg': '#0a0f1d', '--grid-bg': '#111827', '--header-bg': '#1e293b',
+                    '--border-color': '#38bdf8', '--muted-text': '#7dd3fc', '--dim-bg': 'rgba(15, 23, 42, 0.5)',
+                    '--event-bg-1': '#0284c7', '--event-bg-2': '#1e40af'
+                },
+                1: { // February - Valentine Deep Rose & Wine
+                    '--page-bg': '#120509', '--grid-bg': '#1c0a12', '--header-bg': '#4c0519',
+                    '--border-color': '#f43f5e', '--muted-text': '#fb7185', '--dim-bg': 'rgba(76, 5, 25, 0.4)',
+                    '--event-bg-1': '#be123c', '--event-bg-2': '#881337'
+                },
+                2: { // March - St. Patrick Emerald & Gold
+                    '--page-bg': '#021a12', '--grid-bg': '#062c1e', '--header-bg': '#064e3b',
+                    '--border-color': '#10b981', '--muted-text': '#34d399', '--dim-bg': 'rgba(6, 78, 59, 0.4)',
+                    '--event-bg-1': '#047857', '--event-bg-2': '#15803d'
+                },
+                3: { // April - Spring Bloom & Pastel Teal
+                    '--page-bg': '#041f1e', '--grid-bg': '#0a2e2c', '--header-bg': '#115e59',
+                    '--border-color': '#2dd4bf', '--muted-text': '#5eead4', '--dim-bg': 'rgba(17, 94, 89, 0.4)',
+                    '--event-bg-1': '#0d9488', '--event-bg-2': '#0891b2'
+                },
+                4: { // May - Early Summer Citrus & Golden Sun
+                    '--page-bg': '#1c1202', '--grid-bg': '#281b04', '--header-bg': '#78350f',
+                    '--border-color': '#f59e0b', '--muted-text': '#fbbf24', '--dim-bg': 'rgba(120, 53, 15, 0.4)',
+                    '--event-bg-1': '#d97706', '--event-bg-2': '#b45309'
+                },
+                5: { // June - Summer Sky & Ocean Blue
+                    '--page-bg': '#03192e', '--grid-bg': '#072642', '--header-bg': '#0369a1',
+                    '--border-color': '#38bdf8', '--muted-text': '#7dd3fc', '--dim-bg': 'rgba(3, 105, 161, 0.4)',
+                    '--event-bg-1': '#0284c7', '--event-bg-2': '#0e7490'
+                },
+                6: { // July - Patriotic Navy, Crimson & White
+                    '--page-bg': '#080c1a', '--grid-bg': '#0f172a', '--header-bg': '#1e1b4b',
+                    '--border-color': '#ef4444', '--muted-text': '#60a5fa', '--dim-bg': 'rgba(30, 27, 75, 0.5)',
+                    '--event-bg-1': '#b91c1c', '--event-bg-2': '#1d4ed8'
+                },
+                7: { // August - Sunset Amber & Copper
+                    '--page-bg': '#1a0a03', '--grid-bg': '#281207', '--header-bg': '#7c2d12',
+                    '--border-color': '#f97316', '--muted-text': '#fdba74', '--dim-bg': 'rgba(124, 45, 18, 0.4)',
+                    '--event-bg-1': '#c2410c', '--event-bg-2': '#ea580c'
+                },
+                8: { // September - Autumn Harvest & Deep Wine
+                    '--page-bg': '#18080a', '--grid-bg': '#260f13', '--header-bg': '#701a2d',
+                    '--border-color': '#eab308', '--muted-text': '#fde047', '--dim-bg': 'rgba(112, 26, 45, 0.4)',
+                    '--event-bg-1': '#9f1239', '--event-bg-2': '#a16207'
+                },
+                9: { // October - Halloween Spooky Purple & Orange
+                    '--page-bg': '#09090b', '--grid-bg': '#18181b', '--header-bg': '#3b0764',
+                    '--border-color': '#ea580c', '--muted-text': '#f97316', '--dim-bg': 'rgba(59, 7, 100, 0.35)',
+                    '--event-bg-1': '#c2410c', '--event-bg-2': '#6b21a8'
+                },
+                10: { // November - Thanksgiving Amber & Warm Wood
+                    '--page-bg': '#140c07', '--grid-bg': '#1f140d', '--header-bg': '#451a03',
+                    '--border-color': '#d97706', '--muted-text': '#f59e0b', '--dim-bg': 'rgba(69, 26, 3, 0.4)',
+                    '--event-bg-1': '#9a3412', '--event-bg-2': '#854d0e'
+                },
+                11: { // December - Holiday Winter Sky & Evergreen
+                    '--page-bg': '#08131d', '--grid-bg': '#0f1f2e', '--header-bg': '#0c4a6e',
+                    '--border-color': '#38bdf8', '--muted-text': '#7dd3fc', '--dim-bg': 'rgba(8, 47, 73, 0.4)',
+                    '--event-bg-1': '#0284c7', '--event-bg-2': '#047857'
+                }
+            };
+
+            const selectedTheme = themes[month] || themes[9];
+            for (const [key, value] of Object.entries(selectedTheme)) {
+                root.style.setProperty(key, value);
+            }
+        }
+        applySeasonalTheme();
+
+        // Clock Logic (with AM/PM enforced)
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            document.getElementById('date').innerText = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Rotating Photo Slideshow Logic
+        let photoList = [];
+        let photoIndex = 0;
+        let activeSlot = 1;
+
+        async function initPhotoSlideshow() {
+            try {
+                const response = await fetch('photos.json');
+                if (response.ok) {
+                    photoList = await response.json();
+                }
+            } catch (e) {
+                console.log("No photos.json found, checking display_pic.png fallback.");
+            }
+
+            const img1 = document.getElementById('banner-img-1');
+            const img2 = document.getElementById('banner-img-2');
+            const bannerContainer = document.getElementById('banner-container');
+
+            if (photoList && photoList.length > 0) {
+                bannerContainer.style.display = 'block';
+                showNextPhoto();
+                if (photoList.length > 1) {
+                    setInterval(showNextPhoto, 12000); 
+                }
+            } else {
+                const fallbackImg = new Image();
+                fallbackImg.onload = () => {
+                    bannerContainer.style.display = 'block';
+                    img1.src = 'display_pic.png';
+                    img1.style.opacity = '1';
+                };
+                fallbackImg.onerror = () => {
+                    bannerContainer.style.display = 'none';
+                };
+                fallbackImg.src = 'display_pic.png';
+            }
+        }
+
+        function showNextPhoto() {
+            if (photoList.length === 0) return;
+            
+            const nextPhotoUrl = photoList[photoIndex];
+            photoIndex = (photoIndex + 1) % photoList.length;
+
+            const img1 = document.getElementById('banner-img-1');
+            const img2 = document.getElementById('banner-img-2');
+
+            const activeImg = activeSlot === 1 ? img1 : img2;
+            const nextImg = activeSlot === 1 ? img2 : img1;
+
+            nextImg.onload = () => {
+                nextImg.style.opacity = '1';
+                activeImg.style.opacity = '0';
+                activeSlot = activeSlot === 1 ? 2 : 1;
+            };
+            nextImg.src = nextPhotoUrl;
+        }
+
+        // Calendar Grid Rendering
+        async function buildCalendarGrid() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = ''; 
+
+            const now = new Date();
+            const startGrid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            startGrid.setDate(startGrid.getDate() - startGrid.getDay());
+            const endGrid = new Date(startGrid);
+            endGrid.setDate(startGrid.getDate() + 34); 
+
+            let currentDate = new Date(startGrid);
+            const cells = {};
+            const todayForDimming = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            while (currentDate <= endGrid) {
+                const dateString = currentDate.toISOString().split('T')[0];
+                const cell = document.createElement('div');
+                cell.className = 'day-cell flex flex-col';
+                
+                const isToday = currentDate.toDateString() === now.toDateString();
+
+                if (currentDate < todayForDimming) {
+                    cell.classList.add('day-dimmed'); 
+                } else if (isToday) {
+                    // Highlight today's entire cell background and make the border pop
+                    cell.style.backgroundColor = 'var(--event-bg-1)';
+                    cell.style.borderColor = '#ffffff';
+                    cell.style.boxShadow = 'inset 0 0 10px rgba(255, 255, 255, 0.3)';
+                }
+                
+                const dayNum = document.createElement('div');
+                dayNum.className = isToday
+                    ? 'text-right text-base text-white font-black mb-1 bg-black/30 px-2 py-0.5 rounded' 
+                    : 'text-right text-sm text-muted font-bold mb-1';
+                
+                dayNum.innerText = currentDate.getDate();
+                cell.appendChild(dayNum);
+                grid.appendChild(cell);
+                cells[dateString] = cell;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            try {
+                const response = await fetch('events.json');
+                const allEvents = await response.json();
+
+                const dayEventCounts = {};
+
+                allEvents.forEach(event => {
+                    const eventDateObj = new Date(event.start.dateTime || event.start.date);
+                    if (!event.start.dateTime) {
+                        eventDateObj.setMinutes(eventDateObj.getMinutes() + eventDateObj.getTimezoneOffset());
+                    }
+                    const eventDate = eventDateObj.toISOString().split('T')[0];
+                    
+                    if (cells[eventDate]) {
+                        if (!dayEventCounts[eventDate]) {
+                            dayEventCounts[eventDate] = 0;
+                        }
+                        const count = dayEventCounts[eventDate];
+                        dayEventCounts[eventDate]++;
+
+                        const evtDiv = document.createElement('div');
+                        evtDiv.className = 'event-item';
+                        
+                        const bgColor = (count % 2 === 0) ? 'var(--event-bg-1)' : 'var(--event-bg-2)';
+                        evtDiv.style.backgroundColor = bgColor;
+                        
+                        // Event time with AM/PM enforced
+                        let timeString = event.start.dateTime ? eventDateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) + ' ' : '';
+                        evtDiv.innerText = timeString + event.summary;
+                        cells[eventDate].appendChild(evtDiv);
+                    }
+                });
+            } catch (err) { console.error("Waiting for JSON update...", err); }
+        }
+
+        // Initialize App
+        initPhotoSlideshow();
+        setInterval(buildCalendarGrid, 5 * 60 * 1000);
+        buildCalendarGrid();
+    </script>
+</body>
+</html>

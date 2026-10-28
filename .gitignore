@@ -1,0 +1,20 @@
+# Sensitive Google Credentials & Tokens
+credentials.json
+token.json
+
+# Generated Runtime Data
+events.json
+photos.json
+
+# Personal Assets & Photos
+display_pic.png
+photos/
+
+# Python Virtual Environment
+cal_env/
+__pycache__/
+*.pyc
+
+# OS Specific Files
+Thumbs.db
+.DS_Store
