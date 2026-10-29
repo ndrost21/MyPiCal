@@ -10,6 +10,16 @@
     <meta http-equiv="Expires" content="0">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Hide mouse cursor and disable text selection for kiosk display */
+        *, *::before, *::after {
+            cursor: none !important;
+        }
+
+        html, body {
+            cursor: none !important;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         /* Default / Fallback Variables */
         :root {
             --page-bg: #09090b;
@@ -118,7 +128,7 @@
         <div class="shrink-0">
             <div class="flex items-baseline gap-3">
                 <h1 id="clock" class="text-6xl font-bold leading-none"></h1>
-                <span id="version-badge" class="text-xs font-mono px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-muted font-semibold tracking-wider select-none shadow-sm">v1.1.0</span>
+                <span id="version-badge" class="text-xs font-mono px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-muted font-semibold tracking-wider select-none shadow-sm">v1.1.1</span>
             </div>
             <h2 id="date" class="text-2xl text-muted mt-2"></h2>
         </div>
@@ -140,7 +150,7 @@
 
     <script>
         // Application Version - Bump this string on updates for easy visual confirmation
-        const APP_VERSION = 'v1.1.0';
+        const APP_VERSION = 'v1.1.1';
         const versionEl = document.getElementById('version-badge');
         if (versionEl) {
             versionEl.innerText = APP_VERSION;
