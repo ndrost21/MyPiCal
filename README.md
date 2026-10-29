@@ -1,30 +1,30 @@
 # Pi Calendar Dashboard
 
-A beautiful, self-hosted, 24/7 smart wall calendar designed for the Raspberry Pi. It features a rolling 5-week grid view, multi-calendar synchronization, dynamic 12-month seasonal color themes, a rotating photo banner slideshow, automated background syncing, and mouse cursor hiding.
+A beautiful, self-hosted, 24/7 smart wall calendar designed for the Raspberry Pi. It features a rolling 5-week grid view, multi-calendar synchronization, dynamic 12-month seasonal color themes, monthly header banners, automated background syncing, and mouse cursor hiding.
 
 ---
 
 ## Architecture & How It Works
 
 This project uses a decoupled architecture designed for reliability and seamless kiosk performance:
-1. **The Python Backend (`fetch_calendar.py`)**: Runs securely in the background (via a 15-minute cron job). It uses OAuth2 refresh tokens to pull events from all active Google Calendars and exports them into a lightweight `events.json` file. It also scans a local photos folder to generate a `photos.json` manifest.
+1. **The Python Backend (`fetch_calendar.py`)**: Runs securely in the background (via a 15-minute cron job). It uses OAuth2 refresh tokens to pull events from all active Google Calendars and exports them into a lightweight `events.json` file.
 2. **The Lightweight Web Server (`lighttpd`)**: Serves the local HTML and JSON files directly from `/var/www/html/` so the app loads instantly on boot without relying on external web hosting.
-3. **The Frontend Dashboard (`index.html`)**: A responsive, high-contrast single-page web app built with Tailwind CSS. It features a live digital clock, a cross-fading photo banner, automated seasonal color palettes based on the current month, and a rolling 5-week calendar grid with highlighted current-day styling.
+3. **The Frontend Dashboard (`index.html`)**: A responsive, high-contrast single-page web app built with Tailwind CSS. It features a live digital clock, an on-screen version badge for tracking pushes, monthly header images (`Oct_pic.png`, `Nov_pic.png`, etc.), automated 12-month seasonal color palettes, and a rolling 5-week calendar grid with highlighted current-day styling.
 4. **The Display Kiosk (`Chromium`)**: Launches automatically on system startup in full-screen kiosk mode (`--kiosk`), displaying the dashboard cleanly without browser UI elements or mouse cursors.
 
 ---
 
 ## File Structure
 
-* **`index.html`** — The main frontend dashboard interface, containing the calendar grid, clock, photo slideshow logic, and seasonal theme definitions.
+* **`index.html`** — The main frontend dashboard interface, containing the calendar grid, clock, version badge, monthly header logic, and seasonal theme definitions.
 * **`config.js`** — Stores your Google API configuration (`CLIENT_ID` and `API_KEY`).
-* **`fetch_calendar.py`** — The Python backend script that authenticates with Google, fetches calendar events, and updates `events.json` and `photos.json`.
+* **`fetch_calendar.py`** — The Python backend script that authenticates with Google, fetches calendar events, and updates `events.json`.
 * **`credentials.json`** — Your Google Cloud OAuth client secret file (Desktop application type).
 * **`token.json`** — Contains your persistent Google account refresh token (generated automatically on first run).
 * **`events.json`** — Dynamically generated runtime file containing upcoming calendar events.
-* **`photos.json`** — Dynamically generated runtime file listing photos for the banner slideshow.
-* **`display_pic.png`** — Fallback header image for the photo banner.
-* **`photos/`** — Folder containing custom images (`.jpg`, `.png`, `.webp`) for the rotating header banner slideshow.
+* **`<Month>_pic.png`** — Month-specific header banners (e.g., `Oct_pic.png`, `Nov_pic.png`, `Dec_pic.png`). If the current month's file doesn't exist, the header cleanly defaults to showing nothing.
+* **`display_pic.png`** — Fallback or original header image.
+* **`photos/`** — (Optional) Folder containing custom images (`.jpg`, `.png`, `.webp`) if using a rotating header banner slideshow via `photos.json`.
 
 ---
 
@@ -52,7 +52,7 @@ const GOOGLE_CONFIG = {
 ### Step 3: Transfer Files to the Raspberry Pi
 Using SCP from your PC terminal (replace `ndrost` with your Pi username and `mypical` with your Pi's hostname or IP):
 ```cmd
-scp index.html config.js fetch_calendar.py credentials.json display_pic.png ndrost@mypical:~/
+scp index.html config.js fetch_calendar.py credentials.json Oct_pic.png ndrost@mypical:~/
 ```
 
 ### Step 4: Pi Server & Dependencies Setup
@@ -64,21 +64,18 @@ sudo apt update && sudo apt install -y lighttpd unclutter
 # 2. Move web files to the active server directory
 sudo mv ~/index.html /var/www/html/index.html
 sudo mv ~/config.js /var/www/html/config.js
-sudo mv ~/display_pic.png /var/www/html/display_pic.png 2>/dev/null || true
+sudo mv ~/Oct_pic.png /var/www/html/Oct_pic.png 2>/dev/null || true
 
-# 3. Create photos directory for slideshow support
-sudo mkdir -p /var/www/html/photos
-
-# 4. Grant your user write permissions to the web folder
+# 3. Grant your user write permissions to the web folder
 sudo chown -R $USER:$USER /var/www/html/
 
-# 5. Set up Python virtual environment and install Google libraries
+# 4. Set up Python virtual environment and install Google libraries
 python3 -m venv ~/cal_env
 source ~/cal_env/bin/activate
 pip install --upgrade pip
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
-# 6. Run initial sync to generate token.json and events.json
+# 5. Run initial sync to generate token.json and events.json
 python ~/fetch_calendar.py
 ```
 *(Note: The first time you run `fetch_calendar.py`, it will output a link. Open that link in your browser, log into your Google account, and grant calendar permissions).*
@@ -117,5 +114,9 @@ python ~/fetch_calendar.py
 
 ## Customization & Management
 
-* **Adding Photos**: Drop any `.jpg` or `.png` images into `/var/www/html/photos/` on your Pi (or set up a Samba network share for drag-and-drop access from Windows). The banner will automatically cross-fade between them.
-* **Seasonal Themes**: The dashboard automatically inspects the current month on startup and applies a custom color palette ranging from winter frosted blues to autumn harvest ambers and Halloween spooks, with today's date highlighted distinctly.
+* **Monthly Header Banners**: Name banner images after the 3-letter month abbreviation:
+  `Jan_pic.png`, `Feb_pic.png`, `Mar_pic.png`, `Apr_pic.png`, `May_pic.png`, `Jun_pic.png`,
+  `Jul_pic.png`, `Aug_pic.png`, `Sep_pic.png`, `Oct_pic.png`, `Nov_pic.png`, `Dec_pic.png`.
+  Place the file into `/var/www/html/` (or your project directory). If the image for the current month does not exist, the header banner will cleanly hide itself without displaying empty borders or broken image icons.
+* **Seasonal Themes**: The dashboard automatically inspects the current month and applies a custom color palette ranging from winter frosted blues to autumn harvest ambers and Halloween spooks, with today's date highlighted distinctly. It checks for month rollover automatically even if the display runs 24/7 without rebooting.
+* **Visual Version Tag**: A subtle badge next to the clock displays the version (e.g. `v1.1.0`). When pushing changes to GitHub and pulling to the Pi, bump `APP_VERSION` in `index.html` to immediately confirm visually that the Pi is running the updated file.

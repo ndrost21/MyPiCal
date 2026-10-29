@@ -7,7 +7,7 @@ events.json
 photos.json
 
 # Personal Assets & Photos
-display_pic.png
+*.png
 photos/
 
 # Python Virtual Environment
