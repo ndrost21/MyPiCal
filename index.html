@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Calendar Dashboard</title>
+    <!-- Prevent Chromium Kiosk Caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Default / Fallback Variables */
@@ -109,10 +113,13 @@
 </head>
 <body class="h-screen flex flex-col p-4">
     
-    <!-- Header: Clock on Left, Rotating Photo Banner Spanning Right -->
+    <!-- Header: Clock on Left with Version Badge, Rotating Photo Banner Spanning Right -->
     <div class="flex items-center justify-between mb-4 gap-6 z-10">
         <div class="shrink-0">
-            <h1 id="clock" class="text-6xl font-bold leading-none"></h1>
+            <div class="flex items-baseline gap-3">
+                <h1 id="clock" class="text-6xl font-bold leading-none"></h1>
+                <span id="version-badge" class="text-xs font-mono px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-muted font-semibold tracking-wider select-none shadow-sm">v1.1.0</span>
+            </div>
             <h2 id="date" class="text-2xl text-muted mt-2"></h2>
         </div>
         
@@ -132,6 +139,13 @@
     </div>
 
     <script>
+        // Application Version - Bump this string on updates for easy visual confirmation
+        const APP_VERSION = 'v1.1.0';
+        const versionEl = document.getElementById('version-badge');
+        if (versionEl) {
+            versionEl.innerText = APP_VERSION;
+        }
+
         // Apply Full 12-Month Seasonal Themes
         function applySeasonalTheme() {
             const root = document.documentElement;
@@ -205,7 +219,6 @@
                 root.style.setProperty(key, value);
             }
         }
-        applySeasonalTheme();
 
         // Clock Logic
         function updateClock() {
@@ -216,43 +229,80 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Rotating Photo Slideshow Logic
+        // Month Abbreviations for Monthly Header Image Mapping
+        const MONTH_ABBREVIATIONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Header Photo Banner Logic
         let photoList = [];
         let photoIndex = 0;
         let activeSlot = 1;
+        let slideshowInterval = null;
 
-        async function initPhotoSlideshow() {
+        async function initHeaderBanner() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+                slideshowInterval = null;
+            }
+
             try {
                 const response = await fetch('photos.json');
                 if (response.ok) {
                     photoList = await response.json();
+                    if (photoList && photoList.length > 0) {
+                        const bannerContainer = document.getElementById('banner-container');
+                        bannerContainer.style.display = 'block';
+                        showNextPhoto();
+                        if (photoList.length > 1) {
+                            slideshowInterval = setInterval(showNextPhoto, 12000);
+                        }
+                        return;
+                    }
                 }
             } catch (e) {
-                console.log("No photos.json found, checking display_pic.png fallback.");
+                // No photos.json found - fall back to monthly image
             }
 
+            loadMonthlyHeaderImage();
+        }
+
+        function loadMonthlyHeaderImage() {
+            const bannerContainer = document.getElementById('banner-container');
             const img1 = document.getElementById('banner-img-1');
             const img2 = document.getElementById('banner-img-2');
-            const bannerContainer = document.getElementById('banner-container');
 
-            if (photoList && photoList.length > 0) {
-                bannerContainer.style.display = 'block';
-                showNextPhoto();
-                if (photoList.length > 1) {
-                    setInterval(showNextPhoto, 12000); 
-                }
-            } else {
-                const fallbackImg = new Image();
-                fallbackImg.onload = () => {
-                    bannerContainer.style.display = 'block';
-                    img1.src = 'display_pic.png';
+            const monthIndex = new Date().getMonth();
+            const monthAbbr = MONTH_ABBREVIATIONS[monthIndex];
+
+            // Primary filename e.g. "Oct_pic.png", "Nov_pic.png", and lowercase fallback "oct_pic.png"
+            const primaryFilename = `${monthAbbr}_pic.png`;
+            const fallbackFilename = `${monthAbbr.toLowerCase()}_pic.png`;
+
+            const tryLoad = (src, fallbackSrc) => {
+                const testImg = new Image();
+                testImg.onload = () => {
+                    img1.src = src;
                     img1.style.opacity = '1';
+                    if (img2) img2.style.opacity = '0';
+                    bannerContainer.style.display = 'block';
                 };
-                fallbackImg.onerror = () => {
-                    bannerContainer.style.display = 'none';
+                testImg.onerror = () => {
+                    if (fallbackSrc) {
+                        tryLoad(fallbackSrc, null);
+                    } else {
+                        // Month image not found: default to nothing showing
+                        bannerContainer.style.display = 'none';
+                        img1.src = '';
+                        img1.style.opacity = '0';
+                        if (img2) {
+                            img2.src = '';
+                            img2.style.opacity = '0';
+                        }
+                    }
                 };
-                fallbackImg.src = 'display_pic.png';
-            }
+                testImg.src = src;
+            };
+
+            tryLoad(primaryFilename, fallbackFilename);
         }
 
         function showNextPhoto() {
@@ -275,15 +325,14 @@
             nextImg.src = nextPhotoUrl;
         }
 
-        // Background Drifting SVG Spooky Animations (October Only)
+        // Spooky Animations (October Only)
+        let spookyIntervalId = null;
+
         function initSpookyAnimations() {
-            // SVG Graphic definitions for Ghost, Bat, Pumpkin, Skull
+            // SVG Graphic definitions for Ghost, Bat, Pumpkin
             const svgs = [
-                // Ghost SVG
                 `<svg viewBox="0 0 24 24" fill="#f8fafc"><path d="M12 2C7.58 2 4 5.58 4 10v9a1 1 0 001.447.894L7 19.118l1.553 1.776a1 1 0 001.494 0L11.6 19.118l1.553 1.776a1 1 0 001.494 0L16.2 19.118l1.553 1.776A1 1 0 0019 19v-9c0-4.42-3.58-8-8-8zm-3 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm6 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>`,
-                // Bat SVG
                 `<svg viewBox="0 0 24 24" fill="#ea580c"><path d="M12 11c-2.5 0-4.5 1-6 3-1.5-2-3.5-3-6-3 3-4 6-6 12-6s9 2 12 6c-2.5 0-4.5 1-6 3-1.5-2-3.5-3-6-3z"/></svg>`,
-                // Pumpkin SVG
                 `<svg viewBox="0 0 24 24" fill="#f97316"><path d="M12 2v2a8 8 0 018 8c0 4.42-3.58 8-8 8s-8-3.58-8-8a8 8 0 018-8V2h0z"/></svg>`
             ];
 
@@ -298,7 +347,7 @@
             }
 
             const booMessages = ["👻 BOO!", "🎃 Boo!", "👻 Spooky!", "🦇 Boo!", "💀 Boo!"];
-            setInterval(() => {
+            spookyIntervalId = setInterval(() => {
                 const popup = document.createElement('div');
                 popup.className = 'boo-popup';
                 popup.innerText = booMessages[Math.floor(Math.random() * booMessages.length)];
@@ -315,6 +364,23 @@
                     popup.remove();
                 }, 3500);
             }, 18000);
+        }
+
+        function updateSpookyAnimations() {
+            const isOctober = (new Date().getMonth() === 9);
+            const existingGhosts = document.querySelectorAll('.drifting-ghost, .boo-popup');
+
+            if (isOctober) {
+                if (existingGhosts.length === 0) {
+                    initSpookyAnimations();
+                }
+            } else {
+                if (spookyIntervalId) {
+                    clearInterval(spookyIntervalId);
+                    spookyIntervalId = null;
+                }
+                existingGhosts.forEach(el => el.remove());
+            }
         }
 
         // Calendar Grid Rendering with Today Highlighted
@@ -360,7 +426,7 @@
             }
 
             try {
-                const response = await fetch('events.json');
+                const response = await fetch('events.json?t=' + Date.now());
                 const allEvents = await response.json();
 
                 const dayEventCounts = {};
@@ -393,16 +459,29 @@
             } catch (err) { console.error("Waiting for JSON update...", err); }
         }
 
-        // Initialize App
-        initPhotoSlideshow();
+        // Automatic Month-Rollover and State Management
+        let currentActiveMonth = -1;
 
-        // Only trigger spooky animations if it is currently October (Month 9)
-        if (new Date().getMonth() === 9) {
-            initSpookyAnimations();
+        function refreshMonthlyState() {
+            const currentMonth = new Date().getMonth();
+            if (currentMonth !== currentActiveMonth) {
+                currentActiveMonth = currentMonth;
+                applySeasonalTheme();
+                initHeaderBanner();
+                updateSpookyAnimations();
+            }
         }
 
-        setInterval(buildCalendarGrid, 5 * 60 * 1000);
-        buildCalendarGrid();
+        function refreshDashboard() {
+            refreshMonthlyState();
+            buildCalendarGrid();
+        }
+
+        // Initialize App
+        refreshDashboard();
+
+        // Check for updates & month rollover every 5 minutes
+        setInterval(refreshDashboard, 5 * 60 * 1000);
     </script>
 </body>
 </html>
