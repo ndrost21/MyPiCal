@@ -101,12 +101,14 @@ python ~/fetch_calendar.py
    [Desktop Entry]
    Type=Application
    Name=Calendar Kiosk
-   Exec=chromium --kiosk --noerrdialogs --disable-infobars --password-store=basic --cursor-visibility=none --check-for-update-interval=31536000 http://localhost
+   Exec=chromium --kiosk --noerrdialogs --disable-infobars --password-store=basic --check-for-update-interval=31536000 http://localhost
    X-GNOME-Autostart-enabled=true
    ```
-3. Make the file executable and reboot:
+3. Make the autostart file executable (and optionally autostart `unclutter` if you are on X11 and want the OS cursor hidden before Chromium launches):
    ```bash
    chmod +x ~/.config/autostart/kiosk.desktop
+   # Optional for X11 cursor hiding outside the browser:
+   # echo -e "[Desktop Entry]\nType=Application\nName=Unclutter\nExec=unclutter -idle 0.5 -root\nX-GNOME-Autostart-enabled=true" > ~/.config/autostart/unclutter.desktop
    sudo reboot
    ```
 
