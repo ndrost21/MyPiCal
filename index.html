@@ -22,7 +22,7 @@
             background-color: var(--page-bg) !important; 
             color: #f8fafc; 
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden; /* Prevent scrollbars from animations */
+            overflow: hidden;
         }
 
         .grid-container {
@@ -72,8 +72,8 @@
         /* Spooky Animations (October Only) */
         @keyframes driftAcross {
             0% { transform: translateX(-80px); opacity: 0; }
-            15% { opacity: 0.5; }
-            85% { opacity: 0.5; }
+            15% { opacity: 0.6; }
+            85% { opacity: 0.6; }
             100% { transform: translateX(calc(100vw + 80px)); opacity: 0; }
         }
 
@@ -86,10 +86,12 @@
 
         .drifting-ghost {
             position: absolute;
-            font-size: 2.5rem;
+            width: 45px;
+            height: 45px;
             pointer-events: none;
             animation: driftAcross 30s linear infinite;
             z-index: 5;
+            filter: drop-shadow(0 0 6px rgba(234, 88, 12, 0.6));
         }
 
         .boo-popup {
@@ -273,13 +275,22 @@
             nextImg.src = nextPhotoUrl;
         }
 
-        // Background Drifting Ghosts & Random Spooky Pop-ups (October Only)
+        // Background Drifting SVG Spooky Animations (October Only)
         function initSpookyAnimations() {
-            const entities = ['👻', '🦇', '💀', '🎃'];
+            // SVG Graphic definitions for Ghost, Bat, Pumpkin, Skull
+            const svgs = [
+                // Ghost SVG
+                `<svg viewBox="0 0 24 24" fill="#f8fafc"><path d="M12 2C7.58 2 4 5.58 4 10v9a1 1 0 001.447.894L7 19.118l1.553 1.776a1 1 0 001.494 0L11.6 19.118l1.553 1.776a1 1 0 001.494 0L16.2 19.118l1.553 1.776A1 1 0 0019 19v-9c0-4.42-3.58-8-8-8zm-3 8a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm6 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg>`,
+                // Bat SVG
+                `<svg viewBox="0 0 24 24" fill="#ea580c"><path d="M12 11c-2.5 0-4.5 1-6 3-1.5-2-3.5-3-6-3 3-4 6-6 12-6s9 2 12 6c-2.5 0-4.5 1-6 3-1.5-2-3.5-3-6-3z"/></svg>`,
+                // Pumpkin SVG
+                `<svg viewBox="0 0 24 24" fill="#f97316"><path d="M12 2v2a8 8 0 018 8c0 4.42-3.58 8-8 8s-8-3.58-8-8a8 8 0 018-8V2h0z"/></svg>`
+            ];
+
             for (let i = 0; i < 3; i++) {
                 const ghost = document.createElement('div');
                 ghost.className = 'drifting-ghost';
-                ghost.innerText = entities[Math.floor(Math.random() * entities.length)];
+                ghost.innerHTML = svgs[i % svgs.length];
                 ghost.style.top = `${15 + Math.random() * 70}%`;
                 ghost.style.animationDuration = `${25 + Math.random() * 15}s`;
                 ghost.style.animationDelay = `${i * 9}s`;
