@@ -220,35 +220,44 @@ function initSpookyAnimations() {
     }, 18000);
 }
 
-function initTurkeyAnimations() {
-    for (let i = 0; i < 2; i++) {
-        const turkey = document.createElement('div');
-        turkey.className = 'roaming-turkey';
-        turkey.textContent = String.fromCodePoint(0x1F983); // turkey emoji
-        turkey.style.top = `${20 + Math.random() * 60}%`;
-        turkey.style.animationDuration = `${22 + Math.random() * 15}s`;
-        turkey.style.animationDelay = `${i * 11}s`;
-        document.body.appendChild(turkey);
-    }
+function spawnOneTurkey() {
+    // Remove any turkey still on screen
+    document.querySelectorAll('.roaming-turkey').forEach(el => el.remove());
 
-    const gobbleMessages = ["🦃 Gobble!", "🍂 Gobble Gobble!", "🦃 Feast!", "🧡 Gobble!"];
-    seasonalIntervalId = setInterval(() => {
-        const popup = document.createElement('div');
-        popup.className = 'gobble-popup';
-        popup.innerText = gobbleMessages[Math.floor(Math.random() * gobbleMessages.length)];
-        
-        const randomX = Math.random() * (window.innerWidth - 300) + 100;
-        const randomY = Math.random() * (window.innerHeight - 300) + 100;
-        
-        popup.style.left = `${randomX}px`;
-        popup.style.top = `${randomY}px`;
-        
-        document.body.appendChild(popup);
-        
-        setTimeout(() => {
-            popup.remove();
-        }, 3500);
-    }, 18000);
+    const turkey = document.createElement('div');
+    turkey.className = 'roaming-turkey';
+    turkey.textContent = String.fromCodePoint(0x1F983); // turkey emoji
+
+    // Random vertical position (20-75% of screen height)
+    turkey.style.top = (20 + Math.random() * 55) + '%';
+    turkey.style.left = '-80px';
+    turkey.style.position = 'fixed';
+    document.body.appendChild(turkey);
+
+    // Duration: 12-20 seconds to cross screen
+    const duration = 12000 + Math.random() * 8000;
+    const targetX = window.innerWidth + 80;
+    let startTime = null;
+
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const x = progress * targetX;
+        const bob = Math.sin(elapsed / 200) * 6; // gentle waddle
+        turkey.style.transform = `translateX(${x}px) translateY(${bob}px)`;
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            turkey.remove();
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+function initTurkeyAnimations() {
+    spawnOneTurkey();
+    seasonalIntervalId = setInterval(spawnOneTurkey, 60000);
 }
 
 function updateSeasonalAnimations() {
