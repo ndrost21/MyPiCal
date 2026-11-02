@@ -13,15 +13,37 @@ if os.name == 'nt':
     # Windows PC Testing paths
     BASE_DIR = os.getcwd()
     OUTPUT_FILE = os.path.join(BASE_DIR, 'events.json')
+    PHOTO_DIR = os.path.join(BASE_DIR, 'photos')
+    PHOTOS_JSON = os.path.join(BASE_DIR, 'photos.json')
 else: 
-    # Raspberry Pi paths (Update 'username' if yours is different)
-    BASE_DIR = '/home/username' 
+    # Raspberry Pi paths
+    BASE_DIR = '/home/ndrost' 
     OUTPUT_FILE = '/var/www/html/events.json'
+    PHOTO_DIR = '/var/www/html/photos'
+    PHOTOS_JSON = '/var/www/html/photos.json'
 
 CREDS_FILE = os.path.join(BASE_DIR, 'credentials.json')
 TOKEN_FILE = os.path.join(BASE_DIR, 'token.json')
 
+def update_photos_manifest():
+    """Scan the photos folder and write photos.json for the web UI."""
+    try:
+        valid_extensions = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
+        photo_files = []
+        if os.path.exists(PHOTO_DIR):
+            for file in sorted(os.listdir(PHOTO_DIR)):
+                if file.lower().endswith(valid_extensions):
+                    photo_files.append(f"photos/{file}")
+        
+        with open(PHOTOS_JSON, 'w') as f:
+            json.dump(photo_files, f)
+    except Exception as e:
+        print(f"Error updating photos list: {e}")
+
 def main():
+    # Update photo slideshow manifest
+    update_photos_manifest()
+
     creds = None
     # Load the permanent refresh token if it exists
     if os.path.exists(TOKEN_FILE):
@@ -40,14 +62,14 @@ def main():
     try:
         service = build('calendar', 'v3', credentials=creds)
         
-        # Calculate 5-week date range
-        now = datetime.datetime.utcnow()
+        # Calculate 5-week date range using timezone-aware UTC datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         start_grid = today - datetime.timedelta(days=today.isoweekday() % 7)
         end_grid = start_grid + datetime.timedelta(days=35)
         
-        start_iso = start_grid.isoformat() + 'Z'
-        end_iso = end_grid.isoformat() + 'Z'
+        start_iso = start_grid.isoformat()
+        end_iso = end_grid.isoformat()
         
         # Fetch events from all selected calendars
         calendar_list = service.calendarList().list().execute()
