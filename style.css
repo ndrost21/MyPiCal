@@ -1,0 +1,141 @@
+/* Hide mouse cursor and disable text selection for kiosk display */
+*, *::before, *::after {
+    cursor: none !important;
+}
+
+html, body {
+    cursor: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Default / Fallback Variables */
+:root {
+    --page-bg: #140c07;
+    --grid-bg: #1f140d;
+    --header-bg: #451a03;
+    --border-color: #d97706;
+    --muted-text: #f59e0b;
+    --dim-bg: rgba(69, 26, 3, 0.4);
+    --event-bg-1: #9a3412;
+    --event-bg-2: #854d0e;
+}
+
+body { 
+    background-color: var(--page-bg) !important; 
+    color: #f8fafc; 
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+}
+
+.grid-container {
+    background-color: var(--grid-bg);
+    border-color: var(--border-color);
+}
+
+.header-row {
+    background-color: var(--header-bg);
+    border-color: var(--border-color);
+    color: var(--muted-text);
+}
+
+.grid-cols-7 { 
+    display: grid; 
+    grid-template-columns: repeat(7, minmax(0, 1fr)); 
+}
+
+.day-cell { 
+    min-height: 120px; 
+    border: 1px solid var(--border-color); 
+    padding: 0.5rem; 
+}
+
+.day-dimmed {
+    background-color: var(--dim-bg);
+}
+
+.text-muted {
+    color: var(--muted-text);
+}
+
+.event-item { 
+    font-size: 0.75rem; 
+    line-height: 1rem;
+    padding: 3px 6px; 
+    margin-bottom: 3px; 
+    border-radius: 4px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    color: #ffffff; 
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Turkey Animations (November Only) */
+@keyframes turkeyWaddle {
+    0% { transform: translateX(-80px) translateY(0) scaleX(1); }
+    25% { transform: translateY(-10px) rotate(-3deg); }
+    50% { transform: translateY(0) rotate(0deg) scaleX(1); }
+    75% { transform: translateY(-10px) rotate(3deg); }
+    100% { transform: translateX(calc(100vw + 80px)) translateY(0) scaleX(1); }
+}
+
+@keyframes popUp {
+    0% { transform: scale(0.3) translateY(20px); opacity: 0; }
+    20% { transform: scale(1.1) translateY(0); opacity: 1; }
+    80% { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.8) translateY(-20px); opacity: 0; }
+}
+
+.roaming-turkey {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    pointer-events: none;
+    animation: turkeyWaddle 25s linear infinite;
+    z-index: 5;
+    filter: drop-shadow(0 0 6px rgba(217, 119, 6, 0.6));
+}
+
+.gobble-popup {
+    position: fixed;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 3rem;
+    color: #d97706;
+    text-shadow: 0 0 20px rgba(217, 119, 6, 0.9), 0 3px 6px rgba(0,0,0,0.9);
+    pointer-events: none;
+    animation: popUp 3.5s ease-in-out forwards;
+    z-index: 50;
+}
+
+/* Spooky Animations (October Only) */
+@keyframes driftAcross {
+    0% { transform: translateX(-80px); opacity: 0; }
+    15% { opacity: 0.6; }
+    85% { opacity: 0.6; }
+    100% { transform: translateX(calc(100vw + 80px)); opacity: 0; }
+}
+
+.drifting-ghost {
+    position: absolute;
+    width: 45px;
+    height: 45px;
+    pointer-events: none;
+    animation: driftAcross 30s linear infinite;
+    z-index: 5;
+    filter: drop-shadow(0 0 6px rgba(234, 88, 12, 0.6));
+}
+
+.boo-popup {
+    position: fixed;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-weight: 900;
+    font-size: 3.5rem;
+    color: #f97316;
+    text-shadow: 0 0 20px rgba(234, 88, 12, 0.9), 0 3px 6px rgba(0,0,0,0.9);
+    pointer-events: none;
+    animation: popUp 3.5s ease-in-out forwards;
+    z-index: 50;
+}
