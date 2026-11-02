@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.2.0';
+const APP_VERSION = 'v1.2.1';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -318,13 +318,16 @@ async function buildCalendarGrid() {
 
         const dayEventCounts = {};
 
-        allEvents.forEach(event => {
-            const eventDateObj = new Date(event.start.dateTime || event.start.date);
-            if (!event.start.dateTime) {
-                eventDateObj.setMinutes(eventDateObj.getMinutes() + eventDateObj.getTimezoneOffset());
-            }
-            const eventDate = eventDateObj.toISOString().split('T')[0];
-            
+	allEvents.forEach(event => {
+    	const rawDateStr = event.start.dateTime || event.start.date;
+    	const eventDateObj = new Date(rawDateStr);
+    
+    	// Format strictly using local date parts to prevent UTC midnight rollovers
+    	const year = eventDateObj.getFullYear();
+    	const month = String(eventDateObj.getMonth() + 1).padStart(2, '0');
+    	const day = String(eventDateObj.getDate()).padStart(2, '0');
+    	const eventDate = `${year}-${month}-${day}`;
+
             if (cells[eventDate]) {
                 if (!dayEventCounts[eventDate]) {
                     dayEventCounts[eventDate] = 0;
