@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.2.1';
+const APP_VERSION = 'v1.2.2';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;

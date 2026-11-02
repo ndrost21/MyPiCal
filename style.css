@@ -89,13 +89,13 @@ body {
 }
 
 .roaming-turkey {
-    position: absolute;
-    width: 50px;
-    height: 50px;
+    position: fixed;
+    width: 55px;
+    height: 55px;
     pointer-events: none;
     animation: turkeyWaddle 25s linear infinite;
-    z-index: 5;
-    filter: drop-shadow(0 0 6px rgba(217, 119, 6, 0.6));
+    z-index: 9999; /* Forces the turkey to sit cleanly in front of the calendar */
+    filter: drop-shadow(0 0 8px rgba(217, 119, 6, 0.8));
 }
 
 .gobble-popup {
@@ -107,7 +107,7 @@ body {
     text-shadow: 0 0 20px rgba(217, 119, 6, 0.9), 0 3px 6px rgba(0,0,0,0.9);
     pointer-events: none;
     animation: popUp 3.5s ease-in-out forwards;
-    z-index: 50;
+    z-index: 10000;
 }
 
 /* Spooky Animations (October Only) */
@@ -124,7 +124,7 @@ body {
     height: 45px;
     pointer-events: none;
     animation: driftAcross 30s linear infinite;
-    z-index: 5;
+    z-index: 9999;
     filter: drop-shadow(0 0 6px rgba(234, 88, 12, 0.6));
 }
 
@@ -137,5 +137,5 @@ body {
     text-shadow: 0 0 20px rgba(234, 88, 12, 0.9), 0 3px 6px rgba(0,0,0,0.9);
     pointer-events: none;
     animation: popUp 3.5s ease-in-out forwards;
-    z-index: 50;
+    z-index: 10000;
 }
