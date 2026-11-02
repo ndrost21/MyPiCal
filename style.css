@@ -73,14 +73,6 @@ body {
 }
 
 /* Turkey Animations (November Only) */
-@keyframes turkeyWaddle {
-    0% { transform: translateX(-80px) translateY(0) scaleX(1); }
-    25% { transform: translateY(-10px) rotate(-3deg); }
-    50% { transform: translateY(0) rotate(0deg) scaleX(1); }
-    75% { transform: translateY(-10px) rotate(3deg); }
-    100% { transform: translateX(calc(100vw + 80px)) translateY(0) scaleX(1); }
-}
-
 @keyframes popUp {
     0% { transform: scale(0.3) translateY(20px); opacity: 0; }
     20% { transform: scale(1.1) translateY(0); opacity: 1; }
@@ -93,7 +85,6 @@ body {
     font-size: 48px;
     line-height: 1;
     pointer-events: none;
-    animation: turkeyWaddle 25s linear infinite;
     z-index: 9999; /* Forces the turkey to sit cleanly in front of the calendar */
     text-shadow: 0 0 12px rgba(217, 119, 6, 0.7);
     user-select: none;
