@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.2.2';
+﻿const APP_VERSION = 'v1.2.3';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -221,12 +221,10 @@ function initSpookyAnimations() {
 }
 
 function initTurkeyAnimations() {
-    const turkeySvg = `<svg viewBox="0 0 24 24" fill="#d97706"><path d="M12 2c-3.31 0-6 2.69-6 6 0 1.5.55 2.87 1.47 3.93C6.3 12.8 5 14.74 5 17c0 2.76 2.24 5 5 5h4c2.76 0 5-2.24 5-5 0-2.26-1.3-4.2-3.47-5.07C17.45 10.87 18 9.5 18 8c0-3.31-2.69-6-6-6zm-1 14h2v3h-2v-3zm1-10c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`;
-
     for (let i = 0; i < 2; i++) {
         const turkey = document.createElement('div');
         turkey.className = 'roaming-turkey';
-        turkey.innerHTML = turkeySvg;
+        turkey.textContent = String.fromCodePoint(0x1F983); // turkey emoji
         turkey.style.top = `${20 + Math.random() * 60}%`;
         turkey.style.animationDuration = `${22 + Math.random() * 15}s`;
         turkey.style.animationDelay = `${i * 11}s`;

@@ -1,4 +1,4 @@
-/* Hide mouse cursor and disable text selection for kiosk display */
+﻿/* Hide mouse cursor and disable text selection for kiosk display */
 *, *::before, *::after {
     cursor: none !important;
 }
@@ -90,12 +90,13 @@ body {
 
 .roaming-turkey {
     position: fixed;
-    width: 55px;
-    height: 55px;
+    font-size: 48px;
+    line-height: 1;
     pointer-events: none;
     animation: turkeyWaddle 25s linear infinite;
     z-index: 9999; /* Forces the turkey to sit cleanly in front of the calendar */
-    filter: drop-shadow(0 0 8px rgba(217, 119, 6, 0.8));
+    text-shadow: 0 0 12px rgba(217, 119, 6, 0.7);
+    user-select: none;
 }
 
 .gobble-popup {
