@@ -1,4 +1,4 @@
-﻿const APP_VERSION = 'v1.2.3';
+const APP_VERSION = 'v1.3.0';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -162,7 +162,7 @@ function loadMonthlyHeaderImage() {
 
 function showNextPhoto() {
     if (photoList.length === 0) return;
-    
+
     const nextPhotoUrl = photoList[photoIndex];
     photoIndex = (photoIndex + 1) % photoList.length;
 
@@ -205,15 +205,15 @@ function initSpookyAnimations() {
         const popup = document.createElement('div');
         popup.className = 'boo-popup';
         popup.innerText = booMessages[Math.floor(Math.random() * booMessages.length)];
-        
+
         const randomX = Math.random() * (window.innerWidth - 300) + 100;
         const randomY = Math.random() * (window.innerHeight - 300) + 100;
-        
+
         popup.style.left = `${randomX}px`;
         popup.style.top = `${randomY}px`;
-        
+
         document.body.appendChild(popup);
-        
+
         setTimeout(() => {
             popup.remove();
         }, 3500);
@@ -277,16 +277,18 @@ function updateSeasonalAnimations() {
     }
 }
 
-// Calendar Grid Rendering with Today Highlighted
+// Calendar Grid Rendering — Current Week + Next Week Only (14 days)
 async function buildCalendarGrid() {
     const grid = document.getElementById('calendar-grid');
-    grid.innerHTML = ''; 
+    grid.innerHTML = '';
 
     const now = new Date();
+    // Start on the Sunday of the current week
     const startGrid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     startGrid.setDate(startGrid.getDate() - startGrid.getDay());
+    // End on the Saturday of next week (13 days after startGrid)
     const endGrid = new Date(startGrid);
-    endGrid.setDate(startGrid.getDate() + 34); 
+    endGrid.setDate(startGrid.getDate() + 13);
 
     let currentDate = new Date(startGrid);
     const cells = {};
@@ -296,22 +298,22 @@ async function buildCalendarGrid() {
         const dateString = currentDate.toISOString().split('T')[0];
         const cell = document.createElement('div');
         cell.className = 'day-cell flex flex-col';
-        
+
         const isToday = currentDate.toDateString() === now.toDateString();
 
         if (currentDate < todayForDimming) {
-            cell.classList.add('day-dimmed'); 
+            cell.classList.add('day-dimmed');
         } else if (isToday) {
             cell.style.backgroundColor = 'var(--event-bg-1)';
             cell.style.borderColor = '#ffffff';
             cell.style.boxShadow = 'inset 0 0 12px rgba(255, 255, 255, 0.4)';
         }
-        
+
         const dayNum = document.createElement('div');
         dayNum.className = isToday
-            ? 'text-right text-base text-white font-black mb-1 bg-black/40 px-2 py-0.5 rounded' 
+            ? 'text-right text-base text-white font-black mb-1 bg-black/40 px-2 py-0.5 rounded'
             : 'text-right text-sm text-muted font-bold mb-1';
-        
+
         dayNum.innerText = currentDate.getDate();
         cell.appendChild(dayNum);
         grid.appendChild(cell);
@@ -325,15 +327,15 @@ async function buildCalendarGrid() {
 
         const dayEventCounts = {};
 
-	allEvents.forEach(event => {
-    	const rawDateStr = event.start.dateTime || event.start.date;
-    	const eventDateObj = new Date(rawDateStr);
-    
-    	// Format strictly using local date parts to prevent UTC midnight rollovers
-    	const year = eventDateObj.getFullYear();
-    	const month = String(eventDateObj.getMonth() + 1).padStart(2, '0');
-    	const day = String(eventDateObj.getDate()).padStart(2, '0');
-    	const eventDate = `${year}-${month}-${day}`;
+        allEvents.forEach(event => {
+            const rawDateStr = event.start.dateTime || event.start.date;
+            const eventDateObj = new Date(rawDateStr);
+
+            // Format strictly using local date parts to prevent UTC midnight rollovers
+            const year = eventDateObj.getFullYear();
+            const month = String(eventDateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(eventDateObj.getDate()).padStart(2, '0');
+            const eventDate = `${year}-${month}-${day}`;
 
             if (cells[eventDate]) {
                 if (!dayEventCounts[eventDate]) {
@@ -344,16 +346,76 @@ async function buildCalendarGrid() {
 
                 const evtDiv = document.createElement('div');
                 evtDiv.className = 'event-item';
-                
+
                 const bgColor = (count % 2 === 0) ? 'var(--event-bg-1)' : 'var(--event-bg-2)';
                 evtDiv.style.backgroundColor = bgColor;
-                
+
                 let timeString = event.start.dateTime ? eventDateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) + ' ' : '';
                 evtDiv.innerText = timeString + event.summary;
                 cells[eventDate].appendChild(evtDiv);
             }
         });
     } catch (err) { console.error("Waiting for JSON update...", err); }
+}
+
+// To-Do Section: Load and render Google Tasks
+async function loadTasks() {
+    const todoList = document.getElementById('todo-list');
+    if (!todoList) return;
+
+    try {
+        const response = await fetch('tasks.json?t=' + Date.now());
+        if (!response.ok) {
+            todoList.innerHTML = '<p class="todo-empty">No tasks file found. Run fetch_calendar.py to sync.</p>';
+            return;
+        }
+        const tasks = await response.json();
+
+        if (!tasks || tasks.length === 0) {
+            todoList.innerHTML = '<p class="todo-empty">✅ All caught up — no pending tasks!</p>';
+            return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        todoList.innerHTML = '';
+        tasks.forEach(task => {
+            const item = document.createElement('div');
+            item.className = 'todo-item';
+
+            // Left: checkbox icon + title
+            const left = document.createElement('div');
+            left.className = 'todo-title';
+            left.innerHTML = `<span class="todo-check">☐</span> ${task.title}`;
+
+            // Right: due date badge (if set)
+            const right = document.createElement('div');
+            if (task.due) {
+                const dueDate = new Date(task.due);
+                // Normalize to local midnight to avoid UTC offset display issues
+                const dueDateLocal = new Date(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate());
+                const isOverdue = dueDateLocal < today;
+                const isToday = dueDateLocal.toDateString() === today.toDateString();
+
+                const dueDateStr = dueDateLocal.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+                right.className = `todo-due ${isOverdue ? 'todo-overdue' : isToday ? 'todo-today' : ''}`;
+                right.innerText = isToday ? '🔔 Today' : isOverdue ? `⚠ ${dueDateStr}` : dueDateStr;
+                item.classList.add(isOverdue ? 'todo-item-overdue' : '');
+            } else {
+                right.className = 'todo-due todo-no-date';
+                right.innerText = '—';
+            }
+
+            item.appendChild(left);
+            item.appendChild(right);
+            todoList.appendChild(item);
+        });
+
+    } catch (err) {
+        console.error("Could not load tasks:", err);
+        todoList.innerHTML = '<p class="todo-empty">Could not load tasks.</p>';
+    }
 }
 
 // Automatic Month-Rollover and State Management
@@ -372,6 +434,7 @@ function refreshMonthlyState() {
 function refreshDashboard() {
     refreshMonthlyState();
     buildCalendarGrid();
+    loadTasks();
 }
 
 // Initialize App

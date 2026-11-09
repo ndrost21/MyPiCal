@@ -1,4 +1,4 @@
-﻿/* Hide mouse cursor and disable text selection for kiosk display */
+/* Hide mouse cursor and disable text selection for kiosk display */
 *, *::before, *::after {
     cursor: none !important;
 }
@@ -21,12 +21,34 @@ html, body {
     --event-bg-2: #854d0e;
 }
 
-body { 
-    background-color: var(--page-bg) !important; 
-    color: #f8fafc; 
+body {
+    background-color: var(--page-bg) !important;
+    color: #f8fafc;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
 }
+
+/* =============================================
+   LAYOUT: Calendar ~65%, To-Do ~35%
+   ============================================= */
+
+/* Calendar container takes up ~63% of remaining vertical space */
+.calendar-container {
+    flex: 0 0 63%;
+    min-height: 0;
+}
+
+/* To-Do section takes the remaining ~35% */
+.todo-section {
+    flex: 1 1 0;
+    min-height: 0;
+    background-color: var(--grid-bg);
+    border-color: var(--border-color);
+}
+
+/* =============================================
+   CALENDAR GRID
+   ============================================= */
 
 .grid-container {
     background-color: var(--grid-bg);
@@ -39,15 +61,16 @@ body {
     color: var(--muted-text);
 }
 
-.grid-cols-7 { 
-    display: grid; 
-    grid-template-columns: repeat(7, minmax(0, 1fr)); 
+.grid-cols-7 {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-.day-cell { 
-    min-height: 120px; 
-    border: 1px solid var(--border-color); 
-    padding: 0.5rem; 
+/* 2-row calendar: each cell fills its row height naturally */
+.day-cell {
+    min-height: 80px;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
 }
 
 .day-dimmed {
@@ -58,21 +81,112 @@ body {
     color: var(--muted-text);
 }
 
-.event-item { 
-    font-size: 0.75rem; 
+.event-item {
+    font-size: 0.75rem;
     line-height: 1rem;
-    padding: 3px 6px; 
-    margin-bottom: 3px; 
-    border-radius: 4px; 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    color: #ffffff; 
+    padding: 3px 6px;
+    margin-bottom: 3px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #ffffff;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0,0,0,0.4);
 }
 
-/* Turkey Animations (November Only) */
+/* =============================================
+   TO-DO SECTION
+   ============================================= */
+
+.todo-header {
+    background-color: var(--header-bg);
+    border-color: var(--border-color);
+    color: var(--muted-text);
+    flex-shrink: 0;
+}
+
+.todo-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+/* Individual task row */
+.todo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 1rem;
+}
+
+.todo-item:last-child {
+    border-bottom: none;
+}
+
+/* Overdue row gets a subtle left accent */
+.todo-item-overdue {
+    border-left: 3px solid #ef4444;
+    padding-left: 0.6rem;
+}
+
+/* Task title + checkbox */
+.todo-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.todo-check {
+    color: var(--muted-text);
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Due date badge */
+.todo-due {
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--muted-text);
+    flex-shrink: 0;
+}
+
+.todo-overdue {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.todo-today {
+    background: rgba(var(--event-bg-1), 0.25);
+    color: #fbbf24;
+}
+
+.todo-no-date {
+    color: rgba(255, 255, 255, 0.25);
+    background: transparent;
+}
+
+.todo-empty {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+}
+
+/* =============================================
+   TURKEY ANIMATIONS (November Only)
+   ============================================= */
+
 @keyframes popUp {
     0% { transform: scale(0.3) translateY(20px); opacity: 0; }
     20% { transform: scale(1.1) translateY(0); opacity: 1; }
@@ -102,7 +216,10 @@ body {
     z-index: 10000;
 }
 
-/* Spooky Animations (October Only) */
+/* =============================================
+   SPOOKY ANIMATIONS (October Only)
+   ============================================= */
+
 @keyframes driftAcross {
     0% { transform: translateX(-80px); opacity: 0; }
     15% { opacity: 0.6; }
