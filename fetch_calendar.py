@@ -62,14 +62,15 @@ def main():
     try:
         service = build('calendar', 'v3', credentials=creds)
         
-        # Calculate 5-week date range using timezone-aware UTC datetime
+        # Calculate rolling date range with buffer to prevent timezone offsets from clipping edge events
         now = datetime.datetime.now(datetime.timezone.utc)
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         start_grid = today - datetime.timedelta(days=today.isoweekday() % 7)
-        end_grid = start_grid + datetime.timedelta(days=35)
+        fetch_start = start_grid - datetime.timedelta(days=7)
+        fetch_end = start_grid + datetime.timedelta(days=42)
         
-        start_iso = start_grid.isoformat()
-        end_iso = end_grid.isoformat()
+        start_iso = fetch_start.isoformat()
+        end_iso = fetch_end.isoformat()
         
         # Fetch events from all selected calendars
         calendar_list = service.calendarList().list().execute()

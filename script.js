@@ -1,4 +1,4 @@
-﻿const APP_VERSION = 'v1.2.3';
+const APP_VERSION = 'v1.2.4';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -277,23 +277,32 @@ function updateSeasonalAnimations() {
     }
 }
 
+// Helper to format local Date objects as YYYY-MM-DD
+function formatDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Calendar Grid Rendering with Today Highlighted
 async function buildCalendarGrid() {
     const grid = document.getElementById('calendar-grid');
     grid.innerHTML = ''; 
 
     const now = new Date();
-    const startGrid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Use local noon to prevent daylight saving time boundary shifts
+    const startGrid = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
     startGrid.setDate(startGrid.getDate() - startGrid.getDay());
     const endGrid = new Date(startGrid);
     endGrid.setDate(startGrid.getDate() + 34); 
 
     let currentDate = new Date(startGrid);
     const cells = {};
-    const todayForDimming = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayForDimming = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
 
     while (currentDate <= endGrid) {
-        const dateString = currentDate.toISOString().split('T')[0];
+        const dateString = formatDateKey(currentDate);
         const cell = document.createElement('div');
         cell.className = 'day-cell flex flex-col';
         
@@ -323,36 +332,101 @@ async function buildCalendarGrid() {
         const response = await fetch('events.json?t=' + Date.now());
         const allEvents = await response.json();
 
-        const dayEventCounts = {};
+        const dayEvents = {};
 
-	allEvents.forEach(event => {
-    	const rawDateStr = event.start.dateTime || event.start.date;
-    	const eventDateObj = new Date(rawDateStr);
-    
-    	// Format strictly using local date parts to prevent UTC midnight rollovers
-    	const year = eventDateObj.getFullYear();
-    	const month = String(eventDateObj.getMonth() + 1).padStart(2, '0');
-    	const day = String(eventDateObj.getDate()).padStart(2, '0');
-    	const eventDate = `${year}-${month}-${day}`;
+        allEvents.forEach(event => {
+            if (!event.start) return;
 
-            if (cells[eventDate]) {
-                if (!dayEventCounts[eventDate]) {
-                    dayEventCounts[eventDate] = 0;
+            const summary = event.summary || '(No title)';
+
+            if (event.start.date) {
+                // All-day event: start.date is "YYYY-MM-DD", end.date is exclusive "YYYY-MM-DD"
+                // Parse directly as local calendar dates to avoid UTC offset shifting the day
+                const [sY, sM, sD] = event.start.date.split('-').map(Number);
+                const startDate = new Date(sY, sM - 1, sD, 12, 0, 0);
+
+                let endDate;
+                if (event.end && event.end.date) {
+                    const [eY, eM, eD] = event.end.date.split('-').map(Number);
+                    endDate = new Date(eY, eM - 1, eD, 12, 0, 0);
+                } else {
+                    endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 1);
                 }
-                const count = dayEventCounts[eventDate];
-                dayEventCounts[eventDate]++;
 
-                const evtDiv = document.createElement('div');
-                evtDiv.className = 'event-item';
-                
-                const bgColor = (count % 2 === 0) ? 'var(--event-bg-1)' : 'var(--event-bg-2)';
-                evtDiv.style.backgroundColor = bgColor;
-                
-                let timeString = event.start.dateTime ? eventDateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) + ' ' : '';
-                evtDiv.innerText = timeString + event.summary;
-                cells[eventDate].appendChild(evtDiv);
+                if (endDate <= startDate) {
+                    endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 1);
+                }
+
+                // Iterate through all days in the span (exclusive of endDate)
+                const curr = new Date(startDate);
+                while (curr < endDate) {
+                    const dateKey = formatDateKey(curr);
+                    if (cells[dateKey]) {
+                        if (!dayEvents[dateKey]) dayEvents[dateKey] = [];
+                        dayEvents[dateKey].push({
+                            isAllDay: true,
+                            sortTime: 0,
+                            displayText: summary
+                        });
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
+            } else if (event.start.dateTime) {
+                // Timed event
+                const startObj = new Date(event.start.dateTime);
+                const endObj = event.end && event.end.dateTime ? new Date(event.end.dateTime) : startObj;
+
+                const startDate = new Date(startObj.getFullYear(), startObj.getMonth(), startObj.getDate(), 12, 0, 0);
+
+                let effectiveEnd = new Date(endObj);
+                // If the event ends exactly at midnight (00:00:00), don't roll over into the next day
+                if (effectiveEnd > startObj && effectiveEnd.getHours() === 0 && effectiveEnd.getMinutes() === 0 && effectiveEnd.getSeconds() === 0) {
+                    effectiveEnd = new Date(effectiveEnd.getTime() - 1000);
+                }
+                const endDate = new Date(effectiveEnd.getFullYear(), effectiveEnd.getMonth(), effectiveEnd.getDate(), 12, 0, 0);
+
+                const curr = new Date(startDate);
+                while (curr <= endDate) {
+                    const dateKey = formatDateKey(curr);
+                    if (cells[dateKey]) {
+                        if (!dayEvents[dateKey]) dayEvents[dateKey] = [];
+                        const isStartDay = (curr.getTime() === startDate.getTime());
+                        const timeString = isStartDay
+                            ? startObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }) + ' '
+                            : '';
+                        dayEvents[dateKey].push({
+                            isAllDay: false,
+                            sortTime: startObj.getTime(),
+                            displayText: timeString + summary
+                        });
+                    }
+                    curr.setDate(curr.getDate() + 1);
+                }
             }
         });
+
+        // Render sorted events into cells with alternating theme colors
+        for (const [dateKey, events] of Object.entries(dayEvents)) {
+            if (!cells[dateKey]) continue;
+
+            // Sort: All-day events first, then timed events chronologically
+            events.sort((a, b) => {
+                if (a.isAllDay && !b.isAllDay) return -1;
+                if (!a.isAllDay && b.isAllDay) return 1;
+                return a.sortTime - b.sortTime;
+            });
+
+            events.forEach((evt, idx) => {
+                const evtDiv = document.createElement('div');
+                evtDiv.className = 'event-item';
+                const bgColor = (idx % 2 === 0) ? 'var(--event-bg-1)' : 'var(--event-bg-2)';
+                evtDiv.style.backgroundColor = bgColor;
+                evtDiv.innerText = evt.displayText;
+                cells[dateKey].appendChild(evtDiv);
+            });
+        }
     } catch (err) { console.error("Waiting for JSON update...", err); }
 }
 
