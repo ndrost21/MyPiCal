@@ -1,4 +1,4 @@
-﻿/* Hide mouse cursor and disable text selection for kiosk display */
+/* Hide mouse cursor and disable text selection for kiosk display */
 *, *::before, *::after {
     cursor: none !important;
 }
@@ -70,6 +70,67 @@ body {
     color: #ffffff; 
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Santa Sleigh Animations (December Only) */
+@keyframes hohohoPulse {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.08) translateY(-3px); }
+}
+
+@keyframes rudolphGlow {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.9; }
+}
+
+.roaming-santa {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    user-select: none;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}
+
+.santa-speech-bubble {
+    position: absolute;
+    top: -30px;
+    left: 65px;
+    background: #ffffff;
+    color: #dc2626;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 2px solid #dc2626;
+    box-shadow: 0 0 12px rgba(220, 38, 38, 0.5), 0 2px 4px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    animation: hohohoPulse 1.2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.santa-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 24px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #dc2626;
+}
+
+.santa-svg {
+    width: 220px;
+    height: 75px;
+    display: block;
+    overflow: visible;
+}
+
+.rudolph-glow {
+    animation: rudolphGlow 1s alternate infinite ease-in-out;
 }
 
 /* Turkey Animations (November Only) */
