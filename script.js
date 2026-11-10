@@ -1,13 +1,24 @@
-const APP_VERSION = 'v1.2.4';
+const APP_VERSION = 'v1.2.5';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
 }
 
+// Helper to determine the active month (supports ?month=0-11 or ?santa query param for testing)
+function getActiveMonth() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('month')) {
+        const m = parseInt(urlParams.get('month'), 10);
+        if (!isNaN(m) && m >= 0 && m <= 11) return m;
+    }
+    if (urlParams.has('santa')) return 11;
+    return new Date().getMonth();
+}
+
 // Apply Full 12-Month Seasonal Themes
 function applySeasonalTheme() {
     const root = document.documentElement;
-    const month = new Date().getMonth(); // 0 = Jan ... 11 = Dec
+    const month = getActiveMonth(); // 0 = Jan ... 11 = Dec
 
     const themes = {
         0: { // January - Winter Navy & Frost
@@ -127,7 +138,7 @@ function loadMonthlyHeaderImage() {
     const img1 = document.getElementById('banner-img-1');
     const img2 = document.getElementById('banner-img-2');
 
-    const monthIndex = new Date().getMonth();
+    const monthIndex = getActiveMonth();
     const monthAbbr = MONTH_ABBREVIATIONS[monthIndex];
 
     const primaryFilename = `${monthAbbr}_pic.png`;
@@ -180,7 +191,7 @@ function showNextPhoto() {
     nextImg.src = nextPhotoUrl;
 }
 
-// Seasonal Animations (Spooky for October, Turkey for November)
+// Seasonal Animations (Spooky for October, Turkey for November, Santa for December)
 let seasonalIntervalId = null;
 
 function initSpookyAnimations() {
@@ -260,9 +271,119 @@ function initTurkeyAnimations() {
     seasonalIntervalId = setInterval(spawnOneTurkey, 60000);
 }
 
+function spawnOneSanta() {
+    // Remove any santa still on screen
+    document.querySelectorAll('.roaming-santa').forEach(el => el.remove());
+
+    const santa = document.createElement('div');
+    santa.className = 'roaming-santa';
+
+    santa.innerHTML = `
+        <div class="santa-speech-bubble">HO HO HO! 🎅</div>
+        <svg viewBox="0 0 220 75" class="santa-svg">
+            <!-- Sparkles / Magic Stardust Trail -->
+            <g class="santa-trail" opacity="0.85">
+                <circle cx="10" cy="50" r="1.5" fill="#fef08a" />
+                <path d="M 22 42 L 24 38 L 26 42 L 30 44 L 26 46 L 24 50 L 22 46 L 18 44 Z" fill="#fbbf24" />
+                <circle cx="34" cy="56" r="2" fill="#ffffff" />
+                <path d="M 40 32 L 41.5 28 L 43 32 L 47 33.5 L 43 35 L 41.5 39 L 40 35 L 36 33.5 Z" fill="#fde047" />
+            </g>
+            <!-- Golden Reins -->
+            <path d="M 102 44 Q 140 48 178 38" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="3,1" />
+            <!-- Sleigh Runners -->
+            <line x1="65" y1="58" x2="68" y2="67" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" />
+            <line x1="105" y1="58" x2="108" y2="67" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 48 67 L 120 67 Q 134 67 136 55 Q 137 49 132 49 Q 128 49 129 54" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" />
+            <!-- Toy Sack in Back -->
+            <ellipse cx="66" cy="42" rx="14" ry="13" fill="#047857" />
+            <rect x="56" y="27" width="10" height="10" rx="1" fill="#f59e0b" />
+            <line x1="61" y1="27" x2="61" y2="37" stroke="#dc2626" stroke-width="2" />
+            <line x1="56" y1="32" x2="66" y2="32" stroke="#dc2626" stroke-width="2" />
+            <circle cx="68" cy="30" r="5" fill="#38bdf8" />
+            <!-- Santa Torso & Coat -->
+            <path d="M 80 56 Q 80 40 94 40 Q 108 40 108 56 Z" fill="#dc2626" />
+            <path d="M 82 50 L 106 50" stroke="#1e293b" stroke-width="4" />
+            <rect x="91" y="47" width="6" height="6" fill="#fbbf24" rx="1" />
+            <ellipse cx="94" cy="56" rx="14" ry="3.5" fill="#ffffff" />
+            <!-- Santa Face & Beard -->
+            <circle cx="95" cy="31" r="8" fill="#fecaca" />
+            <circle cx="98" cy="30" r="1.5" fill="#1e293b" />
+            <circle cx="101" cy="33" r="2" fill="#f87171" opacity="0.6" />
+            <path d="M 91 32 Q 95 44 102 38 Q 106 44 102 34 Q 105 32 101 31 Q 95 31 91 32 Z" fill="#ffffff" />
+            <ellipse cx="99" cy="33" rx="4" ry="2" fill="#f8fafc" />
+            <!-- Santa Hat -->
+            <path d="M 89 27 Q 95 24 102 27 L 97 14 Q 90 20 89 27 Z" fill="#dc2626" />
+            <ellipse cx="95.5" cy="27" rx="7.5" ry="3" fill="#ffffff" />
+            <circle cx="97" cy="13" r="3.5" fill="#ffffff" />
+            <!-- Santa Waving Arm & Mitten -->
+            <path d="M 102 44 Q 112 40 114 32" fill="none" stroke="#dc2626" stroke-width="4.5" stroke-linecap="round" />
+            <circle cx="114" cy="31" r="3" fill="#ffffff" />
+            <ellipse cx="116" cy="28" rx="3.5" ry="4" fill="#dc2626" transform="rotate(15 116 28)" />
+            <!-- Sleigh Body -->
+            <path d="M 54 44 Q 50 56 68 59 L 115 59 Q 128 59 127 48 Q 120 52 110 50 Q 82 50 72 44 Q 60 40 54 44 Z" fill="#b91c1c" />
+            <path d="M 52 44 Q 60 40 72 44 Q 82 50 110 50 Q 120 52 127 48" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" />
+            <circle cx="90" cy="54" r="2" fill="#15803d" />
+            <circle cx="94" cy="54" r="2" fill="#15803d" />
+            <circle cx="92" cy="52" r="1.5" fill="#ef4444" />
+            <!-- Reindeer (Rudolph) -->
+            <path d="M 166 45 L 158 54 M 172 46 L 165 57" stroke="#78350f" stroke-width="3" stroke-linecap="round" />
+            <ellipse cx="178" cy="42" rx="16" ry="11" fill="#92400e" />
+            <path d="M 186 46 L 196 54 M 182 46 L 190 56" stroke="#78350f" stroke-width="3" stroke-linecap="round" />
+            <path d="M 163 39 Q 159 38 162 42" stroke="#92400e" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M 185 43 L 196 30 Q 199 26 205 28 L 209 30 Q 212 33 207 36 L 192 46 Z" fill="#92400e" />
+            <ellipse cx="196" cy="26" rx="4" ry="2" fill="#78350f" transform="rotate(-30 196 26)" />
+            <path d="M 197 25 L 195 15 M 195 19 L 191 16 M 195 16 L 198 12 M 199 25 L 202 17 M 201 20 L 206 19" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" />
+            <circle cx="203" cy="29" r="1.2" fill="#1e293b" />
+            <line x1="192" y1="36" x2="197" y2="42" stroke="#dc2626" stroke-width="2.5" />
+            <circle cx="195" cy="40" r="2" fill="#fbbf24" />
+            <!-- Glowing Red Nose -->
+            <circle cx="210" cy="32" r="3.5" fill="#ef4444" />
+            <circle cx="210" cy="32" r="6" fill="#ef4444" opacity="0.35" class="rudolph-glow" />
+            <circle cx="209" cy="31" r="1" fill="#ffffff" />
+        </svg>
+    `;
+
+    // Fly in upper half of the screen (10-50% height)
+    santa.style.top = (10 + Math.random() * 40) + '%';
+    santa.style.left = '-260px';
+    santa.style.position = 'fixed';
+    document.body.appendChild(santa);
+
+    // Duration: 14-22 seconds to cross screen smoothly
+    const duration = 14000 + Math.random() * 8000;
+    const targetX = window.innerWidth + 300;
+    let startTime = null;
+
+    function animate(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const x = progress * targetX;
+        const wave = Math.sin(elapsed / 350);
+        const bob = wave * 14; // gentle swooping flight
+        const tilt = Math.cos(elapsed / 350) * 3; // subtle pitch tilt as he rides the wind
+        santa.style.transform = `translateX(${x}px) translateY(${bob}px) rotate(${tilt}deg)`;
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            santa.remove();
+        }
+    }
+    requestAnimationFrame(animate);
+}
+
+function initSantaAnimations() {
+    spawnOneSanta();
+    seasonalIntervalId = setInterval(spawnOneSanta, 60000);
+}
+
+// Expose on window for easy testing/previewing
+window.spawnOneSanta = spawnOneSanta;
+window.initSantaAnimations = initSantaAnimations;
+
 function updateSeasonalAnimations() {
-    const month = new Date().getMonth();
-    const existingElements = document.querySelectorAll('.drifting-ghost, .boo-popup, .roaming-turkey, .gobble-popup');
+    const month = getActiveMonth();
+    const existingElements = document.querySelectorAll('.drifting-ghost, .boo-popup, .roaming-turkey, .gobble-popup, .roaming-santa');
 
     if (seasonalIntervalId) {
         clearInterval(seasonalIntervalId);
@@ -274,6 +395,8 @@ function updateSeasonalAnimations() {
         initSpookyAnimations();
     } else if (month === 10) {
         initTurkeyAnimations();
+    } else if (month === 11) {
+        initSantaAnimations();
     }
 }
 
@@ -434,7 +557,7 @@ async function buildCalendarGrid() {
 let currentActiveMonth = -1;
 
 function refreshMonthlyState() {
-    const currentMonth = new Date().getMonth();
+    const currentMonth = getActiveMonth();
     if (currentMonth !== currentActiveMonth) {
         currentActiveMonth = currentMonth;
         applySeasonalTheme();
