@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.3.0';
+const APP_VERSION = 'v1.3.1';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -581,7 +581,6 @@ async function fetchAndRenderSleep() {
         const scoreRingEl = document.getElementById('sleep-score-ring');
         const qualifierBadgeEl = document.getElementById('sleep-qualifier-badge');
         const durationEl = document.getElementById('sleep-duration');
-        const avgLabelEl = document.getElementById('sleep-avg-label');
 
         const score = latest.score;
         if (score !== null && score !== undefined) {
@@ -610,12 +609,39 @@ async function fetchAndRenderSleep() {
 
         durationEl.innerText = latest.duration_formatted || '--h --m';
 
-        // Average label
-        if (data.weekly_average_hours) {
-            const avgScoreStr = data.weekly_average_score ? ` • Score: ${data.weekly_average_score}` : '';
-            avgLabelEl.innerText = `7-Day Avg: ${data.weekly_average_hours}h${avgScoreStr}`;
-        } else {
-            avgLabelEl.innerText = '';
+        // Render 7-day average score & duration (placed to the right of current score)
+        const avgScoreValEl = document.getElementById('sleep-avg-score-val');
+        const avgScoreRingEl = document.getElementById('sleep-avg-score-ring');
+        const avgQualifierBadgeEl = document.getElementById('sleep-avg-qualifier-badge');
+        const avgDurationEl = document.getElementById('sleep-avg-duration');
+
+        const avgScore = data.weekly_average_score;
+        if (avgScoreValEl && avgScore !== null && avgScore !== undefined) {
+            avgScoreValEl.innerText = avgScore;
+            avgScoreRingEl.classList.remove('sleep-score-good', 'sleep-score-fair', 'sleep-score-poor');
+            avgQualifierBadgeEl.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full border';
+
+            if (avgScore >= 80) {
+                avgScoreRingEl.classList.add('sleep-score-good');
+                avgQualifierBadgeEl.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+            } else if (avgScore >= 60) {
+                avgScoreRingEl.classList.add('sleep-score-fair');
+                avgQualifierBadgeEl.classList.add('bg-amber-500/20', 'text-amber-300', 'border-amber-500/30');
+            } else {
+                avgScoreRingEl.classList.add('sleep-score-poor');
+                avgQualifierBadgeEl.classList.add('bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+            }
+
+            const avgQualifier = avgScore >= 80 ? 'Good' : avgScore >= 60 ? 'Fair' : 'Poor';
+            avgQualifierBadgeEl.innerText = avgQualifier;
+        } else if (avgScoreValEl) {
+            avgScoreValEl.innerText = '--';
+            avgQualifierBadgeEl.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/20 text-muted';
+            avgQualifierBadgeEl.innerText = '--';
+        }
+
+        if (avgDurationEl) {
+            avgDurationEl.innerText = data.weekly_average_hours ? `${data.weekly_average_hours}h` : '--h';
         }
 
         // Render 7-day bars

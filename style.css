@@ -209,7 +209,7 @@ body {
 
 .sleep-bar-track {
     width: 100%;
-    height: 38px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.06);
     border-radius: 4px;
     display: flex;
