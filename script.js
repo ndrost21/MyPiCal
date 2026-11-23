@@ -1,4 +1,4 @@
-const APP_VERSION = 'v1.2.5';
+const APP_VERSION = 'v1.3.0';
 const versionEl = document.getElementById('version-badge');
 if (versionEl) {
     versionEl.innerText = APP_VERSION;
@@ -553,6 +553,123 @@ async function buildCalendarGrid() {
     } catch (err) { console.error("Waiting for JSON update...", err); }
 }
 
+// Sleep Tracking Widget Logic
+async function fetchAndRenderSleep() {
+    const widget = document.getElementById('sleep-widget');
+    if (!widget) return;
+
+    try {
+        const response = await fetch(`sleep.json?t=${Date.now()}`);
+        if (!response.ok) {
+            // Keep hidden if sleep.json is not present
+            widget.classList.add('hidden');
+            return;
+        }
+
+        const data = await response.json();
+        if (!data || (!data.latest && (!data.weekly_history || data.weekly_history.length === 0))) {
+            widget.classList.add('hidden');
+            return;
+        }
+
+        // Display widget
+        widget.classList.remove('hidden');
+
+        // Render latest night score & duration
+        const latest = data.latest || {};
+        const scoreValEl = document.getElementById('sleep-score-val');
+        const scoreRingEl = document.getElementById('sleep-score-ring');
+        const qualifierBadgeEl = document.getElementById('sleep-qualifier-badge');
+        const durationEl = document.getElementById('sleep-duration');
+        const avgLabelEl = document.getElementById('sleep-avg-label');
+
+        const score = latest.score;
+        if (score !== null && score !== undefined) {
+            scoreValEl.innerText = score;
+
+            scoreRingEl.classList.remove('sleep-score-good', 'sleep-score-fair', 'sleep-score-poor');
+            qualifierBadgeEl.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full border';
+
+            if (score >= 80) {
+                scoreRingEl.classList.add('sleep-score-good');
+                qualifierBadgeEl.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+            } else if (score >= 60) {
+                scoreRingEl.classList.add('sleep-score-fair');
+                qualifierBadgeEl.classList.add('bg-amber-500/20', 'text-amber-300', 'border-amber-500/30');
+            } else {
+                scoreRingEl.classList.add('sleep-score-poor');
+                qualifierBadgeEl.classList.add('bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+            }
+        } else {
+            scoreValEl.innerText = '--';
+            qualifierBadgeEl.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/20 text-muted';
+        }
+
+        const qualifier = latest.qualifier || (score ? (score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Poor') : '--');
+        qualifierBadgeEl.innerText = qualifier.charAt(0).toUpperCase() + qualifier.slice(1).toLowerCase();
+
+        durationEl.innerText = latest.duration_formatted || '--h --m';
+
+        // Average label
+        if (data.weekly_average_hours) {
+            const avgScoreStr = data.weekly_average_score ? ` • Score: ${data.weekly_average_score}` : '';
+            avgLabelEl.innerText = `7-Day Avg: ${data.weekly_average_hours}h${avgScoreStr}`;
+        } else {
+            avgLabelEl.innerText = '';
+        }
+
+        // Render 7-day bars
+        const barsContainer = document.getElementById('sleep-graph-bars');
+        if (barsContainer && Array.isArray(data.weekly_history) && data.weekly_history.length > 0) {
+            barsContainer.innerHTML = '';
+
+            // Scale bars proportionally (benchmark to at least 8.5h)
+            const maxRecordedHours = Math.max(...data.weekly_history.map(d => d.duration_hours || 0));
+            const scaleMax = Math.max(8.5, maxRecordedHours);
+
+            const lastIndex = data.weekly_history.length - 1;
+
+            data.weekly_history.forEach((dayData, idx) => {
+                const hours = dayData.duration_hours || 0;
+                const heightPct = Math.min(100, Math.max(8, Math.round((hours / scaleMax) * 100)));
+                const isToday = (idx === lastIndex);
+
+                const col = document.createElement('div');
+                col.className = 'sleep-bar-col';
+                col.title = `${dayData.day} (${dayData.date}): ${dayData.duration_formatted || hours + 'h'}${dayData.score ? ' - Score: ' + dayData.score : ''}`;
+
+                // Top label: daily hours
+                const labelTop = document.createElement('span');
+                labelTop.className = `text-[9px] font-mono leading-tight mb-0.5 ${isToday ? 'font-bold text-sky-300' : 'text-muted'}`;
+                labelTop.innerText = hours > 0 ? `${hours}h` : '--';
+
+                // Bar track & fill
+                const track = document.createElement('div');
+                track.className = 'sleep-bar-track';
+
+                const fill = document.createElement('div');
+                fill.className = `sleep-bar-fill ${isToday ? 'today-bar' : ''}`;
+                fill.style.height = `${heightPct}%`;
+
+                track.appendChild(fill);
+
+                // Bottom label: day of week
+                const labelBottom = document.createElement('span');
+                labelBottom.className = `text-[10px] mt-1 font-semibold leading-tight ${isToday ? 'text-sky-300 font-bold' : 'text-muted'}`;
+                labelBottom.innerText = dayData.day || '';
+
+                col.appendChild(labelTop);
+                col.appendChild(track);
+                col.appendChild(labelBottom);
+
+                barsContainer.appendChild(col);
+            });
+        }
+    } catch (err) {
+        console.error("Could not load sleep data:", err);
+    }
+}
+
 // Automatic Month-Rollover and State Management
 let currentActiveMonth = -1;
 
@@ -569,6 +686,7 @@ function refreshMonthlyState() {
 function refreshDashboard() {
     refreshMonthlyState();
     buildCalendarGrid();
+    fetchAndRenderSleep();
 }
 
 // Initialize App

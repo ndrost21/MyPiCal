@@ -192,3 +192,55 @@ body {
     animation: popUp 3.5s ease-in-out forwards;
     z-index: 10000;
 }
+
+/* Sleep Tracking Widget */
+#sleep-widget {
+    background-color: var(--grid-bg);
+    border-color: var(--border-color);
+}
+
+.sleep-bar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 0%;
+    min-width: 0;
+}
+
+.sleep-bar-track {
+    width: 100%;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    position: relative;
+}
+
+.sleep-bar-fill {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(180deg, var(--border-color) 0%, var(--event-bg-1) 100%);
+}
+
+.sleep-bar-fill.today-bar {
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.sleep-score-good {
+    border-color: #34d399 !important;
+    color: #34d399;
+}
+
+.sleep-score-fair {
+    border-color: #fbbf24 !important;
+    color: #fbbf24;
+}
+
+.sleep-score-poor {
+    border-color: #f87171 !important;
+    color: #f87171;
+}

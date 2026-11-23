@@ -7,18 +7,20 @@ A beautiful, self-hosted, 24/7 smart wall calendar designed for the Raspberry Pi
 ## Architecture & How It Works
 
 This project uses a decoupled architecture designed for reliability and seamless kiosk performance:
-1. **The Python Backend (`fetch_calendar.py`)**: Runs securely in the background (via a 15-minute cron job). It uses OAuth2 refresh tokens to pull events from all active Google Calendars and exports them into a lightweight `events.json` file.
+1. **The Python Backend (`fetch_calendar.py` & `fetch_sleep.py`)**: Runs securely in the background via cron jobs. It pulls events from Google Calendar into `events.json`, and pulls sleep metrics (sleep score, stages, and 7-day sleep duration) from Garmin Connect into `sleep.json`.
 2. **The Lightweight Web Server (`lighttpd`)**: Serves the local HTML and JSON files directly from `/var/www/html/` so the app loads instantly on boot without relying on external web hosting.
-3. **The Frontend Dashboard (`index.html`)**: A responsive, high-contrast single-page web app built with Tailwind CSS. It features a live digital clock, an on-screen version badge for tracking pushes, monthly header images (`Oct_pic.png`, `Nov_pic.png`, etc.), automated 12-month seasonal color palettes, and a rolling 5-week calendar grid with highlighted current-day styling.
+3. **The Frontend Dashboard (`index.html`)**: A responsive, high-contrast single-page web app built with Tailwind CSS. It features a live digital clock, an on-screen version badge for tracking pushes, monthly header images, automated 12-month seasonal color palettes, a rolling 5-week calendar grid, and a bottom sleep widget with last night's sleep score and a 7-day sleep duration bar chart.
 4. **The Display Kiosk (`Chromium`)**: Launches automatically on system startup in full-screen kiosk mode (`--kiosk`), displaying the dashboard cleanly without browser UI elements or mouse cursors.
 
 ---
 
 ## File Structure
 
-* **`index.html`** — The main frontend dashboard interface, containing the calendar grid, clock, version badge, monthly header logic, and seasonal theme definitions.
-* **`config.js`** — Stores your Google API configuration (`CLIENT_ID` and `API_KEY`).
+* **`index.html`** — The main frontend dashboard interface, containing the calendar grid, clock, version badge, monthly header logic, seasonal theme definitions, and sleep widget.
 * **`fetch_calendar.py`** — The Python backend script that authenticates with Google, fetches calendar events, and updates `events.json`.
+* **`fetch_sleep.py`** — The Python backend script that connects to Garmin Connect, pulls the latest sleep score and 7-day sleep duration history, and outputs `sleep.json`.
+* **`garmin_config.example.json`** — Template configuration file for Garmin Connect login credentials.
+* **`sleep.json`** — Dynamically generated runtime file containing sleep score and 7-day sleep duration.
 * **`credentials.json`** — Your Google Cloud OAuth client secret file (Desktop application type).
 * **`token.json`** — Contains your persistent Google account refresh token (generated automatically on first run).
 * **`events.json`** — Dynamically generated runtime file containing upcoming calendar events.
@@ -69,26 +71,33 @@ sudo mv ~/Oct_pic.png /var/www/html/Oct_pic.png 2>/dev/null || true
 # 3. Grant your user write permissions to the web folder
 sudo chown -R $USER:$USER /var/www/html/
 
-# 4. Set up Python virtual environment and install Google libraries
+# 4. Set up Python virtual environment and install libraries
 python3 -m venv ~/cal_env
 source ~/cal_env/bin/activate
 pip install --upgrade pip
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib garminconnect
 
 # 5. Run initial sync to generate token.json and events.json
 python ~/fetch_calendar.py
+
+# 6. Configure Garmin Connect and run initial sleep sync
+cp ~/garmin_config.example.json ~/garmin_config.json
+nano ~/garmin_config.json  # Enter your Garmin email and password
+python ~/fetch_sleep.py    # Logs in, completes any MFA, and saves cached tokens
 ```
-*(Note: The first time you run `fetch_calendar.py`, it will output a link. Open that link in your browser, log into your Google account, and grant calendar permissions).*
+*(Note: Running `fetch_sleep.py` the first time caches your Garmin authentication tokens securely into `~/.garmin_tokens/` so all future cron executions run automatically without passwords or MFA prompts).*
 
 ### Step 5: Automate Background Syncing (Cron Job)
 1. Open crontab:
    ```bash
    crontab -e
    ```
-2. Add this line at the bottom to sync events every 15 minutes:
+2. Add these lines at the bottom:
    ```text
    */15 * * * * /home/ndrost/cal_env/bin/python /home/ndrost/fetch_calendar.py
+   0 * * * *    /home/ndrost/cal_env/bin/python /home/ndrost/fetch_sleep.py
    ```
+   *(This syncs calendar events every 15 minutes and checks for new sleep updates at the top of every hour).*
 
 ### Step 6: Configure Kiosk Mode & Boot Display
 1. Create the autostart directory and configuration file:
