@@ -97,20 +97,7 @@ def get_garmin_client():
         print("Please run: pip install garminconnect")
         sys.exit(1)
 
-    garmin = None
-
-    # Step 1: Try to load existing cached session tokens
-    if os.path.exists(TOKEN_DIR):
-        try:
-            print(f"Attempting login using cached tokens from {TOKEN_DIR}...")
-            garmin = Garmin()
-            garmin.login(TOKEN_DIR)
-            print("Successfully authenticated using cached tokens.")
-            return garmin
-        except Exception as e:
-            print(f"Cached token login failed ({e}). Re-authenticating with credentials...")
-
-    # Step 2: Read credentials from garmin_config.json or environment variables
+    # Read credentials from garmin_config.json or environment variables
     email = os.environ.get('GARMIN_EMAIL')
     password = os.environ.get('GARMIN_PASSWORD')
 
@@ -124,8 +111,9 @@ def get_garmin_client():
             except Exception as e:
                 print(f"Error reading {CONFIG_FILE}: {e}")
 
-    # Prompt user interactively if credentials not found
-    if not email or not password:
+    # Prompt user interactively if credentials not found and tokens don't exist
+    has_tokens = os.path.exists(TOKEN_DIR)
+    if not has_tokens and (not email or not password or email == "your_garmin_email@example.com"):
         if sys.stdin.isatty():
             print("\n--- Garmin Connect Credentials Setup ---")
             email = input("Garmin Email: ").strip()
@@ -133,31 +121,44 @@ def get_garmin_client():
             password = getpass.getpass("Garmin Password: ").strip()
         else:
             raise ValueError(
-                f"Garmin credentials missing. Please create {CONFIG_FILE} or set GARMIN_EMAIL and GARMIN_PASSWORD environment variables."
+                f"Garmin credentials missing. Please edit {CONFIG_FILE} with your actual Garmin email and password."
             )
 
     try:
-        print(f"Logging in to Garmin Connect as {email}...")
-        garmin = Garmin(email=email, password=password, return_on_mfa=True)
-        result, client_state = garmin.login()
-
-        # Handle Multi-Factor Authentication (MFA)
-        if result == "needs_mfa":
-            print("Garmin MFA required. Check your email or authenticator app for the security code.")
-            mfa_code = input("Enter MFA Code: ").strip()
-            garmin.resume_login(client_state, mfa_code)
-
-        # Cache session tokens to disk for headless background cron runs
+        print(f"Connecting to Garmin Connect (saving session to {TOKEN_DIR})...")
         os.makedirs(TOKEN_DIR, exist_ok=True)
-        garmin.garth.dump(TOKEN_DIR)
-        print(f"Saved session tokens to {TOKEN_DIR} for future automatic syncing.")
+
+        def mfa_callback():
+            print("\nGarmin Multi-Factor Authentication (MFA) required.")
+            print("Please check your email or authenticator app for the 6-digit security code.")
+            return input("Enter Garmin MFA Code: ").strip()
+
+        garmin = Garmin(
+            email=email if (email and email != "your_garmin_email@example.com") else None,
+            password=password if (password and password != "your_garmin_password") else None,
+            prompt_mfa=mfa_callback
+        )
+
+        garmin.login(tokenstore=TOKEN_DIR)
+
+        try:
+            garmin.client.dump(TOKEN_DIR)
+        except Exception:
+            pass
+
+        print("Successfully authenticated with Garmin Connect.")
         return garmin
 
-    except (GarminConnectAuthenticationError, GarminConnectConnectionError, GarminConnectTooManyRequestsError) as err:
-        print(f"Garmin Connect authentication error: {err}")
+    except GarminConnectAuthenticationError as err:
+        print(f"\nGarmin Connect authentication error: {err}")
+        print("Please check your email and password in garmin_config.json.")
+        sys.exit(1)
+    except GarminConnectTooManyRequestsError as err:
+        print(f"\nGarmin Connect rate limit: {err}")
+        print("Garmin may temporarily rate limit login attempts. Please wait a few minutes before trying again.")
         sys.exit(1)
     except Exception as err:
-        print(f"Unexpected error during Garmin login: {err}")
+        print(f"\nUnexpected error during Garmin login: {err}")
         sys.exit(1)
 
 
