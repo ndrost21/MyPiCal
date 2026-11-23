@@ -19,7 +19,7 @@
         <div class="shrink-0">
             <div class="flex items-baseline gap-3">
                 <h1 id="clock" class="text-6xl font-bold leading-none"></h1>
-                <span id="version-badge" class="text-xs font-mono px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-muted font-semibold tracking-wider select-none shadow-sm">v1.2.5</span>
+                <span id="version-badge" class="text-xs font-mono px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-muted font-semibold tracking-wider select-none shadow-sm">v1.3.3</span>
             </div>
             <h2 id="date" class="text-2xl text-muted mt-2"></h2>
         </div>
@@ -37,6 +37,57 @@
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
         </div>
         <div id="calendar-grid" class="grid-cols-7 flex-grow"></div>
+    </div>
+
+    <!-- Sleep Summary & Weekly Trend Widget -->
+    <div id="sleep-widget" class="mt-3 shrink-0 rounded-lg border shadow-lg px-5 py-2.5 z-10 hidden">
+        <div class="flex items-center justify-between gap-8">
+            <!-- Left Group: Current Night Score AND 7-Day Average Score Side-by-Side -->
+            <div class="flex items-center gap-6 shrink-0">
+                <!-- Current Night Sleep Score -->
+                <div class="flex items-center gap-3">
+                    <div id="sleep-score-ring" class="relative flex items-center justify-center w-12 h-12 rounded-full border-2 border-emerald-400 bg-white/5 font-bold shadow-md">
+                        <span id="sleep-score-val" class="text-xl font-extrabold tracking-tight">--</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-muted">Last Night</span>
+                            <span id="sleep-qualifier-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">--</span>
+                        </div>
+                        <div class="flex items-baseline gap-1.5 mt-0.5">
+                            <span id="sleep-duration" class="text-base font-bold">--h --m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subtle Vertical Divider -->
+                <div class="h-10 w-px bg-white/15"></div>
+
+                <!-- 7-Day Average Score & Duration -->
+                <div class="flex items-center gap-3">
+                    <div id="sleep-avg-score-ring" class="relative flex items-center justify-center w-12 h-12 rounded-full border-2 border-amber-400 bg-white/5 font-bold shadow-md">
+                        <span id="sleep-avg-score-val" class="text-xl font-extrabold tracking-tight">--</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-muted">7-Day Avg</span>
+                            <span id="sleep-avg-qualifier-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">--</span>
+                        </div>
+                        <div class="flex items-baseline gap-1.5 mt-0.5">
+                            <span id="sleep-avg-duration" class="text-base font-bold">--h</span>
+                            <span class="text-[11px] text-muted">/ night</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Group: 7-Day Sleep Duration Graph -->
+            <div class="flex-grow flex flex-col justify-center max-w-lg">
+                <div id="sleep-graph-bars" class="flex items-end justify-between gap-3 px-1">
+                    <!-- Populated dynamically via script.js -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- External JavaScript Reference -->

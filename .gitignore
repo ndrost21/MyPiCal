@@ -5,6 +5,12 @@ token.json
 # Generated Runtime Data
 events.json
 photos.json
+sleep.json
+
+# Garmin Credentials & Session Tokens
+garmin_config.json
+.garmin_tokens/
+
 
 # Personal Assets & Photos
 *.png
